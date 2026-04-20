@@ -1,17 +1,995 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<title>TileHub</title>
 <meta charset="UTF-8">
-</head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockLink 재고링크</title>
+<style>
+:root {
+  --green: #1D9E75; --green-dark: #0F6E56; --green-bg: #E1F5EE;
+  --blue: #185FA5;  --blue-bg: #E6F1FB;
+  --amber: #BA7517; --amber-bg: #FAEEDA;
+  --purple: #534AB7; --purple-bg: #EEEDFE;
+  --red: #A32D2D; --red-bg: #FCEBEB;
+  --gray-bg: #F5F5F4; --border: #e2e2df;
+  --text: #1a1a18; --text2: #6b6b68; --text3: #9b9b98;
+  --white: #ffffff; --surface: #f9f9f8;
+  --radius: 8px; --radius-lg: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Noto Sans KR', 'PingFang SC', sans-serif; font-size: 14px; color: var(--text); background: var(--gray-bg); }
 
+/* ── LOGIN ── */
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+.login-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 400px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+.login-head { padding: 28px 28px 20px; text-align: center; border-bottom: 1px solid var(--border); }
+.login-logo { font-size: 22px; font-weight: 700; } .login-logo span { color: var(--green); }
+.login-sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.login-body { padding: 24px 28px; }
+.login-tabs { display: flex; gap: 0; background: var(--gray-bg); border-radius: var(--radius); padding: 3px; margin-bottom: 20px; }
+.ltab { flex: 1; padding: 7px; text-align: center; font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 6px; color: var(--text2); transition: all .15s; }
+.ltab.active { background: var(--white); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; display: block; }
+.form-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: inherit; background: var(--white); color: var(--text); transition: border-color .15s; }
+.form-input:focus { outline: none; border-color: var(--green); }
+.btn-login { width: 100%; padding: 11px; background: var(--green); color: #fff; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 4px; transition: background .15s; }
+.btn-login:hover { background: var(--green-dark); }
+.login-err { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; min-height: 18px; }
+.login-hint { font-size: 11px; color: var(--text3); text-align: center; margin-top: 10px; }
+.lang-row { display: flex; justify-content: center; gap: 8px; padding: 14px; border-top: 1px solid var(--border); }
+.lang-btn { padding: 3px 10px; border: 1px solid var(--border); border-radius: 4px; background: transparent; font-size: 11px; cursor: pointer; font-family: inherit; color: var(--text2); }
+.lang-btn.active { background: var(--gray-bg); color: var(--text); font-weight: 600; }
+
+/* ── APP ── */
+.app { display: none; flex-direction: column; height: 100vh; }
+.app.show { display: flex; }
+.topbar { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 16px; display: flex; align-items: center; gap: 12px; height: 52px; flex-shrink: 0; }
+.topbar-logo { font-size: 16px; font-weight: 700; } .topbar-logo span { color: var(--green); }
+.user-chip { display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.chip-kr { background: var(--blue-bg); color: var(--blue); }
+.chip-cn { background: var(--green-bg); color: var(--green-dark); }
+.chip-admin { background: var(--purple-bg); color: var(--purple); }
+.topbar-lang { display: flex; gap: 3px; background: var(--gray-bg); border-radius: var(--radius); padding: 3px; }
+.tlang { padding: 3px 9px; border-radius: 5px; border: none; background: transparent; font-size: 11px; cursor: pointer; font-family: inherit; font-weight: 500; color: var(--text2); }
+.tlang.active { background: var(--white); color: var(--text); border: 1px solid var(--border); }
+.spacer { flex: 1; }
+.btn-logout { padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; font-size: 12px; cursor: pointer; font-family: inherit; color: var(--text2); }
+.btn-logout:hover { background: var(--gray-bg); }
+.main { display: flex; flex: 1; overflow: hidden; }
+.sidebar { width: 196px; border-right: 1px solid var(--border); background: var(--white); display: flex; flex-direction: column; flex-shrink: 0; }
+.nav-section { padding: 10px 14px 4px; font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.nav-item { padding: 10px 14px; font-size: 13px; cursor: pointer; color: var(--text2); border-left: 2px solid transparent; display: flex; align-items: center; gap: 8px; }
+.nav-item.active { color: var(--green); border-left-color: var(--green); background: var(--green-bg); font-weight: 600; }
+.nav-item:hover:not(.active) { background: var(--gray-bg); }
+.nav-badge { margin-left: auto; background: var(--blue-bg); color: var(--blue); font-size: 10px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+.content { flex: 1; overflow: auto; padding: 20px; }
+.sidebar-foot { padding: 12px 14px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); margin-top: auto; }
+
+/* ── COMPONENTS ── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-size: 15px; font-weight: 600; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 700; }
+.btn { padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--white); font-size: 12px; cursor: pointer; font-family: inherit; color: var(--text); display: inline-flex; align-items: center; gap: 5px; font-weight: 500; transition: all .15s; }
+.btn:hover { background: var(--gray-bg); }
+.btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-amber { background: var(--amber); color: #fff; border-color: var(--amber); }
+.btn-amber:hover { background: #854F0B; }
+.btn-purple { background: var(--purple); color: #fff; border-color: var(--purple); }
+.btn-purple:hover { background: #3C3489; }
+.btn-danger { color: var(--red); border-color: #F09595; background: transparent; }
+.btn-danger:hover { background: var(--red-bg); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--gray-bg); }
+th { padding: 9px 12px; text-align: left; font-weight: 600; color: var(--text2); white-space: nowrap; border-bottom: 1px solid var(--border); font-size: 11px; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--gray-bg); }
+.lot-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; background: var(--purple-bg); color: var(--purple); font-family: monospace; }
+.pill { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+.s-pending   { background: var(--blue-bg);   color: var(--blue); }
+.s-scheduled { background: var(--purple-bg); color: var(--purple); }
+.s-producing { background: #FAEEDA;           color: #633806; }
+.s-done      { background: #EAF3DE;           color: #3B6D11; }
+.s-stocked   { background: var(--green-bg);  color: var(--green-dark); }
+.s-low       { background: var(--amber-bg);  color: var(--amber); }
+.s-out       { background: var(--red-bg);    color: var(--red); }
+.s-ok        { background: #EAF3DE;           color: #3B6D11; }
+.pipeline { display: flex; align-items: center; gap: 0; margin-bottom: 16px; overflow-x: auto; padding: 2px 0; }
+.pipe-box { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pipe-arr { font-size: 14px; color: var(--text3); padding: 0 5px; }
+.alert-box { padding: 10px 14px; border-radius: var(--radius); font-size: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; border: 1px solid; }
+.alert-blue { background: var(--blue-bg); color: var(--blue); border-color: #B5D4F4; }
+.alert-amber { background: var(--amber-bg); color: var(--amber); border-color: #FAC775; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.filter-bar input, .filter-bar select { padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; font-family: inherit; background: var(--white); color: var(--text); }
+.empty { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+.info-box { background: var(--gray-bg); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; margin-bottom: 12px; color: var(--text2); border: 1px solid var(--border); }
+.supplier-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 10px; }
+.sc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sc-name { font-size: 14px; font-weight: 600; }
+.factory-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--gray-bg); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px; font-size: 12px; margin: 2px; }
+.vis-pub { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #EAF3DE; color: #3B6D11; font-weight: 600; }
+.vis-priv { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--gray-bg); color: var(--text2); font-weight: 600; }
+.toggle-wrap { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.toggle { position: relative; width: 36px; height: 20px; cursor: pointer; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; transition: .2s; }
+.toggle input:checked + .toggle-slider { background: var(--green); }
+.toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+.dot-cn { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 4px; }
+.dot-kr { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); display: inline-block; margin-right: 4px; }
+.hist-row { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.hist-row:last-child { border-bottom: none; }
+.hist-meta { display: flex; gap: 10px; color: var(--text2); margin-bottom: 3px; font-size: 11px; }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 200; }
+.modal-bg.open { display: flex; }
+.modal { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border); width: 500px; max-height: 88vh; overflow: auto; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-size: 15px; font-weight: 600; }
+.modal-body { padding: 20px; }
+.modal-foot { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+.close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2); line-height: 1; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.loading { text-align: center; padding: 40px; color: var(--text2); }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
 <body>
 
-<h1>타일허브 TileHub</h1>
+<!-- ═══ LOGIN ═══ -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="login-logo">재고<span>링크</span> StockLink</div>
+      <div class="login-sub" data-t="login_sub"></div>
+    </div>
+    <div class="login-body">
+      <div class="login-tabs">
+        <div class="ltab active" onclick="switchLTab('kr',this)" data-t="tab_kr"></div>
+        <div class="ltab" onclick="switchLTab('cn',this)" data-t="tab_cn"></div>
+        <div class="ltab" onclick="switchLTab('admin',this)" data-t="tab_admin"></div>
+      </div>
+      <div id="lpanel-kr">
+        <div class="form-row"><label class="form-label" data-t="password"></label><input class="form-input" type="password" id="pw-kr" placeholder="korea1234" onkeydown="if(event.key==='Enter')doLogin('kr')"></div>
+        <button class="btn-login" onclick="doLogin('kr')" data-t="login_btn"></button>
+        <div class="login-err" id="err-kr"></div>
+      </div>
+      <div id="lpanel-cn" style="display:none">
+        <div class="form-row"><label class="form-label" data-t="select_trader"></label>
+          <select class="form-input" id="cn-sup-sel"><option value="" data-t="sel_trader_ph"></option></select>
+        </div>
+        <div class="form-row"><label class="form-label" data-t="password"></label><input class="form-input" type="password" id="pw-cn" onkeydown="if(event.key==='Enter')doLogin('cn')"></div>
+        <button class="btn-login" onclick="doLogin('cn')" data-t="login_btn"></button>
+        <div class="login-err" id="err-cn"></div>
+        <div class="login-hint" data-t="demo_cn"></div>
+      </div>
+      <div id="lpanel-admin" style="display:none">
+        <div class="form-row"><label class="form-label" data-t="password"></label><input class="form-input" type="password" id="pw-admin" placeholder="admin1234" onkeydown="if(event.key==='Enter')doLogin('admin')"></div>
+        <button class="btn-login" onclick="doLogin('admin')" data-t="login_btn"></button>
+        <div class="login-err" id="err-admin"></div>
+      </div>
+    </div>
+    <div class="lang-row">
+      <button class="lang-btn active" onclick="setLang('ko')" id="llbtn-ko">한국어</button>
+      <button class="lang-btn" onclick="setLang('en')" id="llbtn-en">EN</button>
+      <button class="lang-btn" onclick="setLang('zh')" id="llbtn-zh">中文</button>
+    </div>
+  </div>
+</div>
 
-<p>중국 공장 직수입 타일 플랫폼</p>
+<!-- ═══ APP ═══ -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="topbar-logo">재고<span>링크</span></div>
+    <span id="user-chip" class="user-chip chip-kr"></span>
+    <div class="topbar-lang">
+      <button class="tlang active" onclick="setLang('ko')" id="lbtn-ko">한국어</button>
+      <button class="tlang" onclick="setLang('en')" id="lbtn-en">EN</button>
+      <button class="tlang" onclick="setLang('zh')" id="lbtn-zh">中文</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn-logout" onclick="doLogout()" data-t="logout"></button>
+  </div>
+  <div class="main">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content" id="content"><div class="loading"><span class="spinner"></span></div></div>
+  </div>
+</div>
 
-<button>견적 요청</button>
+<!-- MODALS -->
+<div class="modal-bg" id="m-new-order">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="new_order"></div><button class="close-btn" onclick="cm('m-new-order')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box" data-t="order_hint"></div>
+      <div class="form-row"><label class="form-label" data-t="col_trader"></label>
+        <select class="form-input" id="no-trader" onchange="loadOrderItems()"><option value="" data-t="sel_trader"></option></select>
+      </div>
+      <div class="form-row"><label class="form-label" data-t="col_item"></label>
+        <select class="form-input" id="no-item"><option value="" data-t="sel_item"></option></select>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="col_qty"></label><input class="form-input" type="number" id="no-qty" min="1"></div>
+        <div class="form-row"><label class="form-label" data-t="col_delivery"></label><input class="form-input" type="date" id="no-delivery"></div>
+      </div>
+      <div class="form-row"><label class="form-label" data-t="col_requester"></label><input class="form-input" id="no-req"></div>
+      <div class="form-row"><label class="form-label" data-t="col_note"></label><input class="form-input" id="no-note"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-new-order')" data-t="cancel"></button><button class="btn btn-primary" onclick="submitOrder()" data-t="send_order"></button></div>
+  </div>
+</div>
 
+<div class="modal-bg" id="m-confirm">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="confirm_sched"></div><button class="close-btn" onclick="cm('m-confirm')">✕</button></div>
+    <div class="modal-body">
+      <div id="confirm-info" class="info-box"></div>
+      <div class="form-row"><label class="form-label" data-t="assign_factory"></label>
+        <select class="form-input" id="co-fac"><option value="" data-t="sel_factory"></option></select>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="prod_start"></label><input class="form-input" type="date" id="co-start"></div>
+        <div class="form-row"><label class="form-label" data-t="prod_end"></label><input class="form-input" type="date" id="co-end"></div>
+      </div>
+      <div class="form-row"><label class="form-label" data-t="lot_no"></label><input class="form-input" id="co-lot" placeholder="260501"></div>
+      <div class="form-row"><label class="form-label" data-t="col_note"></label><input class="form-input" id="co-note"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-confirm')" data-t="cancel"></button><button class="btn btn-amber" onclick="confirmOrder()" data-t="confirm_btn"></button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-start">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="start_prod"></div><button class="close-btn" onclick="cm('m-start')">✕</button></div>
+    <div class="modal-body">
+      <div id="start-info" class="info-box"></div>
+      <div class="form-row"><label class="form-label" data-t="actual_start"></label><input class="form-input" type="date" id="sp-date"></div>
+      <div class="form-row"><label class="form-label" data-t="col_note"></label><input class="form-input" id="sp-note"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-start')" data-t="cancel"></button><button class="btn btn-purple" onclick="startProd()" data-t="mark_prod"></button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-complete">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="complete_prod"></div><button class="close-btn" onclick="cm('m-complete')">✕</button></div>
+    <div class="modal-body">
+      <div id="complete-info" class="info-box"></div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="actual_qty"></label><input class="form-input" type="number" id="cp-qty" min="1"></div>
+        <div class="form-row"><label class="form-label" data-t="complete_date"></label><input class="form-input" type="date" id="cp-date"></div>
+      </div>
+      <div class="form-row"><label class="form-label" data-t="col_note"></label><input class="form-input" id="cp-note"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-complete')" data-t="cancel"></button><button class="btn btn-primary" onclick="completeProd()" data-t="complete_btn"></button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-add-sup">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="add_trader"></div><button class="close-btn" onclick="cm('m-add-sup')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="trader_code"></label><input class="form-input" id="as-code" placeholder="HISN"></div>
+        <div class="form-row"><label class="form-label" data-t="trader_name"></label><input class="form-input" id="as-name"></div>
+      </div>
+      <div class="form-row"><label class="form-label" data-t="trader_pw"></label><input class="form-input" type="password" id="as-pw"></div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="as-show" checked><span class="toggle-slider"></span></label>
+        <span data-t="show_factories"></span>
+      </div>
+      <div id="as-fac-wrap" class="form-row">
+        <label class="form-label" data-t="factories_label"></label>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input class="form-input" id="as-fac-in" style="flex:1" placeholder="공장명">
+          <button class="btn" onclick="addFac()" data-t="add_btn"></button>
+        </div>
+        <div id="as-fac-tags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-add-sup')" data-t="cancel"></button><button class="btn btn-primary" onclick="saveSupplier()" data-t="save"></button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-add-item">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" data-t="add_item"></div><button class="close-btn" onclick="cm('m-add-item')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="col_code"></label><input class="form-input" id="ai-code" placeholder="F08W"></div>
+        <div class="form-row"><label class="form-label" data-t="col_item"></label><input class="form-input" id="ai-name"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="col_size"></label><input class="form-input" id="ai-size" placeholder="600*600"></div>
+        <div class="form-row"><label class="form-label" data-t="col_trader"></label>
+          <select class="form-input" id="ai-trader" onchange="aiLoadFac()"></select>
+        </div>
+      </div>
+      <div id="ai-fac-row" class="form-row" style="display:none">
+        <label class="form-label" data-t="col_factory"></label>
+        <select class="form-input" id="ai-fac"></select>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label" data-t="col_min"></label><input class="form-input" type="number" id="ai-min" value="5"></div>
+        <div class="form-row"><label class="form-label">CNY/<span data-t="boxes"></span></label><input class="form-input" type="number" id="ai-price"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="cm('m-add-item')" data-t="cancel"></button><button class="btn btn-primary" onclick="saveItem()" data-t="save"></button></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG — 배포 후 Worker URL로 변경하세요
+// ══════════════════════════════════════════
+const API = 'https://stocklink-worker.YOUR-SUBDOMAIN.workers.dev';
+
+// ── i18n ──────────────────────────────────
+const T = {
+  ko: {
+    login_sub:'중국-한국 실시간 재고 공유 시스템',tab_kr:'🇰🇷 한국',tab_cn:'🇨🇳 중국',tab_admin:'⚙ 관리자',
+    password:'비밀번호',login_btn:'로그인',logout:'로그아웃',select_trader:'무역업체 선택',
+    sel_trader_ph:'-- 업체 선택 --',demo_cn:'데모: HISN → hisn1234 / JF → jf1234',
+    err_pw:'비밀번호가 올바르지 않습니다.',err_sel:'무역업체를 선택하세요.',err_server:'서버 오류가 발생했습니다.',
+    nav_dash:'대시보드',nav_orders:'주문/오더',nav_prod:'생산 관리',nav_inv:'재고 현황',
+    nav_sup:'업체 관리',nav_items:'품목 관리',nav_hist:'변동 이력',
+    new_order:'오더 요청',add_trader:'무역업체 추가',add_item:'품목 추가',
+    order_hint:'💡 무역업체 선택 → 품목 선택 순으로 진행. 공장 배정은 중국이 처리합니다.',
+    col_trader:'무역업체',col_factory:'공장',col_factory_d:'공장',col_item:'품목명',col_code:'코드',
+    col_qty:'수량',col_date:'요청일',col_status:'상태',col_action:'액션',col_lot:'로트',
+    col_size:'규격',col_stock:'현재고',col_min:'최소재고',col_note:'비고',col_requester:'요청자',
+    col_delivery:'납기',col_prod_plan:'생산일정',col_prod_start:'시작(예정)',col_prod_end:'완료(예정)',
+    confirm_sched:'주문확인 + 생산일정',assign_factory:'담당 공장',prod_start:'생산시작(예정)',prod_end:'생산완료(예정)',
+    lot_no:'로트번호',actual_start:'실제 시작일',actual_qty:'실제 수량',complete_date:'완료일',
+    start_prod:'생산 시작',mark_prod:'생산 시작 처리',complete_prod:'생산완료 → 재고',complete_btn:'완료+재고등록',
+    confirm_btn:'확인 및 일정등록',
+    sel_trader:'-- 무역업체 --',sel_item:'-- 품목 선택 --',sel_factory:'-- 공장 선택 --',
+    cancel:'취소',save:'저장',send_order:'오더 전송',boxes:'박스',
+    trader_code:'업체 코드',trader_name:'업체명',trader_pw:'로그인 비밀번호',
+    show_factories:'공장 정보 공개 (한국에서 공장명 표시)',factories_label:'소속 공장',add_btn:'추가',
+    vis_pub:'공개',vis_priv:'비공개',no_fac:'비공개',
+    s_pending:'대기',s_scheduled:'생산예정',s_producing:'생산중',s_done:'생산완료',s_stocked:'재고등록',s_low:'부족',s_out:'소진',s_ok:'정상',
+    dash_pending:'오더 대기',dash_prog:'진행중',dash_done:'생산완료',dash_stock:'총 재고',
+    alert_pending:'⚡ 미확인 주문이 있습니다',alert_prod:'⚙ 생산 진행 중인 오더가 있습니다',
+    hist_order:'오더 요청',hist_confirm:'주문확인+일정',hist_start:'생산 시작',hist_complete:'생산완료→재고',
+    cn_actor:'중국(공급)',kr_actor:'한국(수입)',
+    err_order:'무역업체·품목·수량을 입력하세요.',err_confirm:'로트번호와 날짜를 입력하세요.',
+    err_complete:'수량과 완료일을 입력하세요.',err_item:'코드와 품목명을 입력하세요.',
+    err_supplier:'코드·이름·비밀번호를 입력하세요.',ordered:'주문량',kr_label:'한국 수입',admin_label:'관리자',
+    loading:'불러오는 중...',saved:'저장됨',
+  },
+  en: {
+    login_sub:'China-Korea Real-time Inventory',tab_kr:'🇰🇷 Korea',tab_cn:'🇨🇳 China',tab_admin:'⚙ Admin',
+    password:'Password',login_btn:'Login',logout:'Logout',select_trader:'Select Trader',
+    sel_trader_ph:'-- Select --',demo_cn:'Demo: HISN → hisn1234 / JF → jf1234',
+    err_pw:'Incorrect password.',err_sel:'Please select a trader.',err_server:'Server error.',
+    nav_dash:'Dashboard',nav_orders:'Orders',nav_prod:'Production',nav_inv:'Inventory',
+    nav_sup:'Suppliers',nav_items:'Items',nav_hist:'History',
+    new_order:'New Order',add_trader:'Add Trader',add_item:'Add Item',
+    order_hint:'💡 Select trader → then item. Factory will be assigned by China.',
+    col_trader:'Trader',col_factory:'Factory',col_factory_d:'Factory',col_item:'Item',col_code:'Code',
+    col_qty:'Qty',col_date:'Date',col_status:'Status',col_action:'Action',col_lot:'Lot',
+    col_size:'Size',col_stock:'Stock',col_min:'Min',col_note:'Note',col_requester:'Requester',
+    col_delivery:'Delivery',col_prod_plan:'Prod. Plan',col_prod_start:'Start (Plan)',col_prod_end:'End (Plan)',
+    confirm_sched:'Confirm + Schedule',assign_factory:'Assign Factory',prod_start:'Start (Plan)',prod_end:'End (Plan)',
+    lot_no:'Lot No.',actual_start:'Actual Start',actual_qty:'Actual Qty',complete_date:'Complete Date',
+    start_prod:'Start Production',mark_prod:'Mark Producing',complete_prod:'Complete → Stock',complete_btn:'Complete+Stock',
+    confirm_btn:'Confirm & Schedule',
+    sel_trader:'-- Select Trader --',sel_item:'-- Select Item --',sel_factory:'-- Select Factory --',
+    cancel:'Cancel',save:'Save',send_order:'Send Order',boxes:'boxes',
+    trader_code:'Code',trader_name:'Name',trader_pw:'Password',
+    show_factories:'Show factory names to Korea',factories_label:'Factories',add_btn:'Add',
+    vis_pub:'Public',vis_priv:'Private',no_fac:'Private',
+    s_pending:'Pending',s_scheduled:'Scheduled',s_producing:'Producing',s_done:'Done',s_stocked:'Stocked',s_low:'Low',s_out:'Out',s_ok:'OK',
+    dash_pending:'Pending',dash_prog:'In Progress',dash_done:'Prod. Done',dash_stock:'Total Stock',
+    alert_pending:'⚡ Unconfirmed orders',alert_prod:'⚙ Orders in production',
+    hist_order:'Order Placed',hist_confirm:'Confirmed+Scheduled',hist_start:'Prod. Started',hist_complete:'Prod. Complete→Stock',
+    cn_actor:'China (Supply)',kr_actor:'Korea (Import)',
+    err_order:'Select trader, item and qty.',err_confirm:'Enter lot and dates.',
+    err_complete:'Enter qty and date.',err_item:'Code and name required.',
+    err_supplier:'Code, name and password required.',ordered:'Ordered',kr_label:'Korea Import',admin_label:'Admin',
+    loading:'Loading...',saved:'Saved',
+  },
+  zh: {
+    login_sub:'中韩实时库存共享系统',tab_kr:'🇰🇷 韩国',tab_cn:'🇨🇳 中国',tab_admin:'⚙ 管理员',
+    password:'密码',login_btn:'登录',logout:'退出',select_trader:'选择贸易商',
+    sel_trader_ph:'-- 请选择 --',demo_cn:'演示: HISN → hisn1234 / JF → jf1234',
+    err_pw:'密码不正确。',err_sel:'请选择贸易商。',err_server:'服务器错误。',
+    nav_dash:'仪表盘',nav_orders:'订单管理',nav_prod:'生产管理',nav_inv:'库存状况',
+    nav_sup:'供应商管理',nav_items:'品目管理',nav_hist:'变动记录',
+    new_order:'新建订单',add_trader:'添加贸易商',add_item:'添加品目',
+    order_hint:'💡 选择贸易商 → 选择品目。工厂由中国方分配。',
+    col_trader:'贸易商',col_factory:'工厂',col_factory_d:'工厂',col_item:'品目名称',col_code:'编码',
+    col_qty:'数量',col_date:'日期',col_status:'状态',col_action:'操作',col_lot:'批次',
+    col_size:'规格',col_stock:'库存',col_min:'最低库存',col_note:'备注',col_requester:'申请人',
+    col_delivery:'交货日',col_prod_plan:'生产计划',col_prod_start:'开始(计划)',col_prod_end:'完成(计划)',
+    confirm_sched:'确认+排产',assign_factory:'指定工厂',prod_start:'开始(计划)',prod_end:'完成(计划)',
+    lot_no:'批次号',actual_start:'实际开始',actual_qty:'实际数量',complete_date:'完成日期',
+    start_prod:'开始生产',mark_prod:'标记生产中',complete_prod:'完成→入库',complete_btn:'完成+入库',
+    confirm_btn:'确认并排产',
+    sel_trader:'-- 选择贸易商 --',sel_item:'-- 选择品目 --',sel_factory:'-- 选择工厂 --',
+    cancel:'取消',save:'保存',send_order:'发送订单',boxes:'箱',
+    trader_code:'编码',trader_name:'名称',trader_pw:'登录密码',
+    show_factories:'公开工厂信息（韩国可见）',factories_label:'所属工厂',add_btn:'添加',
+    vis_pub:'公开',vis_priv:'非公开',no_fac:'非公开',
+    s_pending:'待确认',s_scheduled:'已排产',s_producing:'生产中',s_done:'生产完成',s_stocked:'已入库',s_low:'不足',s_out:'缺货',s_ok:'正常',
+    dash_pending:'待处理',dash_prog:'进行中',dash_done:'生产完成',dash_stock:'总库存',
+    alert_pending:'⚡ 有待确认订单',alert_prod:'⚙ 有生产中订单',
+    hist_order:'下订单',hist_confirm:'确认+排产',hist_start:'开始生产',hist_complete:'生产完成→入库',
+    cn_actor:'中国(供货)',kr_actor:'韩国(进口)',
+    err_order:'请选择贸易商、品目并输入数量。',err_confirm:'请输入批次号和日期。',
+    err_complete:'请输入数量和日期。',err_item:'编码和名称为必填。',
+    err_supplier:'编码、名称、密码为必填。',ordered:'订购量',kr_label:'韩国进口',admin_label:'管理员',
+    loading:'加载中...',saved:'已保存',
+  }
+};
+
+let lang = 'ko';
+let session = null; // { role, supplierId?, supplierCode?, supplierName?, supplierFactories?, showFactory? }
+let suppliers = [];
+let newFacs = [];
+let activeOrderId = null;
+
+function t(k) { return (T[lang] || T.ko)[k] || k; }
+
+function setLang(l) {
+  lang = l;
+  ['ko','en','zh'].forEach(x => {
+    ['llbtn-','lbtn-'].forEach(p => { const el=document.getElementById(p+x); if(el) el.classList.toggle('active', x===l); });
+  });
+  applyT();
+  if (session) buildSidebar();
+}
+
+function applyT() {
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const k = el.getAttribute('data-t');
+    if (['INPUT','TEXTAREA'].includes(el.tagName)) el.placeholder = t(k);
+    else el.textContent = t(k);
+  });
+}
+
+// ── API helpers ───────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || t('err_server')); }
+  return res.json();
+}
+
+// ── LOGIN ─────────────────────────────────────────
+async function loadSuppliers() {
+  try {
+    suppliers = await api('GET', '/api/suppliers');
+    const sel = document.getElementById('cn-sup-sel');
+    sel.innerHTML = `<option value="">${t('sel_trader_ph')}</option>` +
+      suppliers.map(s => `<option value="${s.id}">${s.code} – ${s.name}</option>`).join('');
+  } catch(e) { /* ignore on startup */ }
+}
+
+function switchLTab(tab, el) {
+  document.querySelectorAll('.ltab').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  ['kr','cn','admin'].forEach(x => document.getElementById('lpanel-'+x).style.display = x===tab ? '' : 'none');
+  if (tab === 'cn') loadSuppliers();
+}
+
+async function doLogin(role) {
+  const errEl = document.getElementById('err-'+role);
+  errEl.textContent = '';
+  try {
+    let body = { role };
+    if (role === 'kr') body.password = document.getElementById('pw-kr').value;
+    else if (role === 'admin') body.password = document.getElementById('pw-admin').value;
+    else {
+      body.supplierId = document.getElementById('cn-sup-sel').value;
+      body.password = document.getElementById('pw-cn').value;
+      if (!body.supplierId) { errEl.textContent = t('err_sel'); return; }
+    }
+    const res = await api('POST', '/api/login', body);
+    session = { role: res.role };
+    if (res.supplier) {
+      session.supplierId = res.supplier.id;
+      session.supplierCode = res.supplier.code;
+      session.supplierName = res.supplier.name;
+      session.showFactory = res.supplier.showFactory;
+      session.supplierFactories = res.supplier.factories || [];
+    }
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    buildUI();
+  } catch(e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function doLogout() {
+  session = null;
+  document.getElementById('login-wrap').style.display = '';
+  document.getElementById('app').classList.remove('show');
+  ['pw-kr','pw-cn','pw-admin'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ── APP BUILD ─────────────────────────────────────
+function buildUI() {
+  const chip = document.getElementById('user-chip');
+  const r = session.role;
+  if (r === 'kr')    { chip.textContent = '🇰🇷 '+t('kr_label');    chip.className = 'user-chip chip-kr'; }
+  else if (r === 'admin') { chip.textContent = '⚙ '+t('admin_label'); chip.className = 'user-chip chip-admin'; }
+  else { chip.textContent = '🇨🇳 '+session.supplierCode+' – '+session.supplierName; chip.className = 'user-chip chip-cn'; }
+  buildSidebar();
+  showPage('dashboard');
+}
+
+function buildSidebar() {
+  const r = session.role;
+  const n = (icon, key, page) => `<div class="nav-item" onclick="showPage('${page}',this)">${icon} <span data-t="${key}"></span></div>`;
+  let h = `<div class="nav-section" data-t="nav_dash" style="margin-top:8px"></div>`;
+  h += n('▦','nav_dash','dashboard');
+  h += n('↗','nav_orders','orders');
+  if (r === 'cn' || r === 'admin') h += n('⚙','nav_prod','production');
+  h += n('☰','nav_inv','inventory');
+  if (r === 'admin') {
+    h += `<div class="nav-section"></div>`;
+    h += n('🏭','nav_sup','suppliers');
+    h += n('📦','nav_items','items');
+  }
+  h += n('◷','nav_hist','history');
+  h += `<div style="flex:1"></div><div class="sidebar-foot" id="sync-time">${t('loading')}</div>`;
+  document.getElementById('sidebar').innerHTML = h;
+  applyT();
+}
+
+// ── PAGES ─────────────────────────────────────────
+function showPage(key, navEl) {
+  document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  else { const el = document.querySelector(`.nav-item[onclick="showPage('${key}',this)"]`); if(el) el.classList.add('active'); }
+  document.getElementById('content').innerHTML = `<div class="loading"><span class="spinner"></span>${t('loading')}</div>`;
+  renderPage(key);
+}
+
+async function renderPage(key) {
+  const sid = session.supplierId || null;
+  try {
+    switch(key) {
+      case 'dashboard':  await pageDashboard(sid); break;
+      case 'orders':     await pageOrders(sid); break;
+      case 'production': await pageProduction(sid); break;
+      case 'inventory':  await pageInventory(sid); break;
+      case 'suppliers':  await pageSuppliers(); break;
+      case 'items':      await pageItems(sid); break;
+      case 'history':    await pageHistory(sid); break;
+    }
+    updateSyncTime();
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="empty" style="color:#A32D2D">⚠ ${e.message}</div>`;
+  }
+}
+
+function updateSyncTime() {
+  const el = document.getElementById('sync-time');
+  if (el) el.textContent = new Date().toLocaleTimeString();
+}
+
+function supDisplay(supplierId) {
+  const s = suppliers.find(x => x.id === supplierId);
+  return s ? s.code : supplierId;
+}
+function facDisplay(item_or_order) {
+  const s = suppliers.find(x => x.id === (item_or_order.supplier_id || item_or_order.supplierId));
+  if (!s) return '—';
+  if (session.role === 'kr') return s.show_factory && item_or_order.factory_name ? item_or_order.factory_name : t('no_fac');
+  return item_or_order.factory_name || '—';
+}
+
+// DASHBOARD
+async function pageDashboard(sid) {
+  const [orders, prods] = await Promise.all([
+    api('GET', '/api/orders' + (sid ? '?supplierId='+sid : '')),
+    api('GET', '/api/productions' + (sid ? '?supplierId='+sid : '')),
+  ]);
+  const inv = await api('GET', '/api/inventory' + (sid ? '?supplierId='+sid : ''));
+  const pending = orders.filter(o => o.status === 'pending').length;
+  const inprog  = orders.filter(o => ['scheduled','producing'].includes(o.status)).length;
+  const done    = orders.filter(o => o.status === 'done').length;
+  const stock   = inv.reduce((s,i) => s + (i.stock||0), 0);
+  let alerts = '';
+  if (pending > 0 && session.role === 'cn') alerts += `<div class="alert-box alert-blue">${t('alert_pending')} (${pending})</div>`;
+  if (prods.filter(p=>p.status==='producing').length > 0) alerts += `<div class="alert-box alert-amber">${t('alert_prod')}</div>`;
+  const recentOrders = orders.slice(0,5).map(o => `<tr>
+    <td>${supDisplay(o.supplier_id)}</td><td style="font-weight:600">${o.item_name}</td>
+    <td>${o.qty}${t('boxes')}</td><td><span class="pill s-${o.status}">${t('s_'+o.status)}</span></td>
+  </tr>`).join('') || `<tr><td colspan="4" class="empty">—</td></tr>`;
+  const activeProd = prods.filter(p=>['scheduled','producing'].includes(p.status)).slice(0,4)
+    .map(p => `<tr>
+      <td>${supDisplay(p.supplier_id)}</td><td style="font-weight:600">${p.item_name}</td>
+      <td><span class="lot-badge">${p.lot}</span></td><td><span class="pill s-${p.status}">${t('s_'+p.status)}</span></td>
+    </tr>`).join('') || `<tr><td colspan="4" class="empty">—</td></tr>`;
+  document.getElementById('content').innerHTML = `
+    ${alerts}
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">${t('dash_pending')}</div><div class="stat-value" style="color:var(--blue)">${pending}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('dash_prog')}</div><div class="stat-value" style="color:var(--amber)">${inprog}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('dash_done')}</div><div class="stat-value" style="color:var(--purple)">${done}</div></div>
+      <div class="stat-card"><div class="stat-label">${t('dash_stock')}</div><div class="stat-value" style="color:var(--green)">${stock}<span style="font-size:13px;font-weight:400"> ${t('boxes')}</span></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px">
+      <div>
+        <div class="section-header">
+          <div class="section-title" data-t="nav_orders"></div>
+          ${session.role==='kr'?`<button class="btn btn-primary" onclick="openNewOrder()">+ <span data-t="new_order"></span></button>`:''}
+        </div>
+        <div class="table-wrap"><table><thead><tr><th data-t="col_trader"></th><th data-t="col_item"></th><th data-t="col_qty"></th><th data-t="col_status"></th></tr></thead><tbody>${recentOrders}</tbody></table></div>
+      </div>
+      <div>
+        <div class="section-header"><div class="section-title" data-t="nav_prod"></div></div>
+        <div class="table-wrap"><table><thead><tr><th data-t="col_trader"></th><th data-t="col_item"></th><th data-t="col_lot"></th><th data-t="col_status"></th></tr></thead><tbody>${activeProd}</tbody></table></div>
+      </div>
+    </div>`;
+  applyT();
+}
+
+// ORDERS
+async function pageOrders(sid) {
+  const orders = await api('GET', '/api/orders' + (sid ? '?supplierId='+sid : ''));
+  const counts = {pending:0,scheduled:0,producing:0,done:0,stocked:0};
+  orders.forEach(o => { if(counts[o.status]!==undefined) counts[o.status]++; });
+  const pipeline = ['pending','scheduled','producing','done','stocked']
+    .map((s,i,a) => `<span class="pipe-box s-${s}">${t('s_'+s)} <strong>${counts[s]}</strong></span>${i<a.length-1?'<span class="pipe-arr">→</span>':''}`)
+    .join('');
+  const rows = orders.map(o => {
+    let act = '';
+    if (session.role==='cn') {
+      if (o.status==='pending')   act=`<button class="btn btn-amber btn-sm" onclick="openConfirm('${o.id}')">${t('confirm_sched')}</button>`;
+      if (o.status==='scheduled') act=`<button class="btn btn-purple btn-sm" onclick="openStart('${o.id}')">${t('start_prod')}</button>`;
+      if (o.status==='producing') act=`<button class="btn btn-primary btn-sm" onclick="openComplete('${o.id}')">${t('complete_prod')}</button>`;
+    }
+    return `<tr>
+      <td style="font-size:11px">${o.created_at.slice(0,10)}</td>
+      <td style="font-weight:600;font-size:11px">${supDisplay(o.supplier_id)}</td>
+      <td style="font-size:11px;color:var(--text2)">${facDisplay(o)}</td>
+      <td style="font-weight:600">${o.item_name}</td>
+      <td>${o.qty}${t('boxes')}</td>
+      <td><span class="pill s-${o.status}">${t('s_'+o.status)}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${o.note||'—'}</td>
+      <td>${act||'—'}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty">—</td></tr>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header">
+      <div class="section-title" data-t="nav_orders"></div>
+      ${session.role==='kr'?`<button class="btn btn-primary" onclick="openNewOrder()">+ <span data-t="new_order"></span></button>`:''}
+    </div>
+    <div class="pipeline">${pipeline}</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th data-t="col_date"></th><th data-t="col_trader"></th><th data-t="col_factory_d"></th><th data-t="col_item"></th><th data-t="col_qty"></th><th data-t="col_status"></th><th data-t="col_note"></th><th data-t="col_action"></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  applyT();
+}
+
+// PRODUCTION
+async function pageProduction(sid) {
+  const prods = await api('GET', '/api/productions' + (sid ? '?supplierId='+sid : ''));
+  const rows = prods.map(p => {
+    let act = '';
+    if (session.role==='cn' || session.role==='admin') {
+      if (p.status==='scheduled') act=`<button class="btn btn-purple btn-sm" onclick="openStart('${p.order_id}')">${t('start_prod')}</button>`;
+      if (p.status==='producing') act=`<button class="btn btn-primary btn-sm" onclick="openComplete('${p.order_id}')">${t('complete_prod')}</button>`;
+    }
+    return `<tr>
+      <td><span class="lot-badge">${p.lot}</span></td>
+      <td style="font-size:11px">${supDisplay(p.supplier_id)}</td>
+      <td style="font-size:11px;color:var(--text2)">${session.role==='kr'?facDisplay(p):(p.factory_name||'—')}</td>
+      <td style="font-weight:600">${p.item_name}</td>
+      <td>${p.qty}${t('boxes')}</td>
+      <td style="font-size:11px">${p.start_plan}</td>
+      <td style="font-size:11px">${p.end_plan}</td>
+      <td><span class="pill s-${p.status}">${t('s_'+p.status)}</span></td>
+      <td>${act||'—'}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="9" class="empty">—</td></tr>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header"><div class="section-title" data-t="nav_prod"></div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th data-t="col_lot"></th><th data-t="col_trader"></th><th data-t="col_factory_d"></th><th data-t="col_item"></th><th data-t="col_qty"></th><th data-t="col_prod_start"></th><th data-t="col_prod_end"></th><th data-t="col_status"></th><th data-t="col_action"></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  applyT();
+}
+
+// INVENTORY
+async function pageInventory(sid) {
+  const inv = await api('GET', '/api/inventory' + (sid ? '?supplierId='+sid : ''));
+  const rows = inv.map(i => {
+    const st = i.stock===0?'out':i.stock<i.min_stock?'low':'ok';
+    const fd = session.role==='kr' ? (i.show_factory&&i.factory_name?i.factory_name:t('no_fac')) : (i.factory_name||'—');
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px">${i.code}</td>
+      <td style="font-weight:600">${i.name}</td>
+      <td>${i.size}</td>
+      <td style="font-size:11px">${i.supplier_code}</td>
+      <td style="font-size:11px;color:var(--text2)">${fd}</td>
+      <td style="font-weight:700">${i.stock}</td>
+      <td>${i.min_stock}</td>
+      <td><span class="pill s-${st}">${t('s_'+st)}</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" class="empty">—</td></tr>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header"><div class="section-title" data-t="nav_inv"></div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th data-t="col_code"></th><th data-t="col_item"></th><th data-t="col_size"></th><th data-t="col_trader"></th><th data-t="col_factory_d"></th><th data-t="col_stock"></th><th data-t="col_min"></th><th data-t="col_status"></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  applyT();
+}
+
+// SUPPLIERS (admin)
+async function pageSuppliers() {
+  suppliers = await api('GET', '/api/suppliers');
+  const cards = suppliers.map(s => `
+    <div class="supplier-card">
+      <div class="sc-head">
+        <div>
+          <span class="sc-name">${s.code}</span>
+          <span style="font-size:12px;color:var(--text2);margin-left:8px">${s.name}</span>
+          <span class="${s.show_factory?'vis-pub':'vis-priv'}" style="margin-left:8px">${s.show_factory?t('vis_pub'):t('vis_priv')}</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteSup('${s.id}','${s.code}')">✕</button>
+      </div>
+      <div>${s.show_factory
+        ? (s.factories||[]).map(f=>`<span class="factory-tag">🏭 ${f}</span>`).join('')
+        : `<span style="font-size:12px;color:var(--text3);font-style:italic">${t('no_fac')}</span>`}</div>
+    </div>`).join('') || `<div class="empty">—</div>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header">
+      <div class="section-title" data-t="nav_sup"></div>
+      <button class="btn btn-primary" onclick="om('m-add-sup')">+ <span data-t="add_trader"></span></button>
+    </div>
+    ${cards}`;
+  applyT();
+}
+
+// ITEMS (admin)
+async function pageItems(sid) {
+  if (suppliers.length === 0) suppliers = await api('GET', '/api/suppliers');
+  const items = await api('GET', '/api/items' + (sid ? '?supplierId='+sid : ''));
+  const rows = items.map(i => {
+    const s = suppliers.find(x=>x.id===i.supplier_id);
+    return `<tr>
+      <td style="font-family:monospace;font-size:11px">${i.code}</td>
+      <td style="font-weight:600">${i.name}</td>
+      <td>${i.size}</td>
+      <td style="font-size:11px">${s?s.code:'—'}</td>
+      <td style="font-size:11px;color:var(--text2)">${s&&s.show_factory?i.factory_name:'—'}</td>
+      <td>${i.min_stock}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteItem('${i.id}')">✕</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="empty">—</td></tr>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header">
+      <div class="section-title" data-t="nav_items"></div>
+      <button class="btn btn-primary" onclick="prepAddItem();om('m-add-item')">+ <span data-t="add_item"></span></button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th data-t="col_code"></th><th data-t="col_item"></th><th data-t="col_size"></th><th data-t="col_trader"></th><th data-t="col_factory"></th><th data-t="col_min"></th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  applyT();
+}
+
+// HISTORY
+async function pageHistory(sid) {
+  const hist = await api('GET', '/api/history' + (sid ? '?supplierId='+sid : ''));
+  const rows = hist.map(h => `
+    <div class="hist-row">
+      <div class="hist-meta">
+        <span><span class="${h.actor==='cn'?'dot-cn':'dot-kr'}"></span>${h.actor==='cn'?t('cn_actor'):t('kr_actor')}</span>
+        <span>${(h.created_at||'').slice(0,10)}</span>
+        <span style="font-weight:600">${t(h.type)||h.type}</span>
+      </div>
+      <div>${h.text}</div>
+    </div>`).join('') || `<div class="empty">—</div>`;
+  document.getElementById('content').innerHTML = `
+    <div class="section-header"><div class="section-title" data-t="nav_hist"></div></div>
+    <div class="table-wrap" style="padding:0 16px">${rows}</div>`;
+  applyT();
+}
+
+// ── ORDER ACTIONS ─────────────────────────────────
+async function openNewOrder() {
+  if (suppliers.length === 0) suppliers = await api('GET', '/api/suppliers');
+  document.getElementById('no-trader').innerHTML = `<option value="">${t('sel_trader')}</option>` +
+    suppliers.map(s => `<option value="${s.id}">${s.code} – ${s.name}</option>`).join('');
+  document.getElementById('no-item').innerHTML = `<option value="">${t('sel_item')}</option>`;
+  om('m-new-order'); applyT();
+}
+
+async function loadOrderItems() {
+  const tid = document.getElementById('no-trader').value;
+  const items = tid ? await api('GET', '/api/items?supplierId='+tid) : [];
+  document.getElementById('no-item').innerHTML = `<option value="">${t('sel_item')}</option>` +
+    items.map(i => `<option value="${i.id}" data-name="${i.name}" data-size="${i.size}">${i.name} (${i.code})</option>`).join('');
+}
+
+async function submitOrder() {
+  const tid = document.getElementById('no-trader').value;
+  const iOpt = document.getElementById('no-item');
+  const iid = iOpt.value;
+  const qty = parseInt(document.getElementById('no-qty').value) || 0;
+  if (!tid || !iid || qty < 1) { alert(t('err_order')); return; }
+  const sel = iOpt.options[iOpt.selectedIndex];
+  await api('POST', '/api/orders', {
+    itemId: iid, itemName: sel.dataset.name, size: sel.dataset.size,
+    supplierId: tid, qty,
+    requester: document.getElementById('no-req').value,
+    delivery: document.getElementById('no-delivery').value,
+    note: document.getElementById('no-note').value,
+  });
+  cm('m-new-order');
+  showPage('orders');
+}
+
+async function openConfirm(orderId) {
+  activeOrderId = orderId;
+  const orders = await api('GET', '/api/orders');
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  if (suppliers.length === 0) suppliers = await api('GET', '/api/suppliers');
+  const sup = suppliers.find(s => s.id === o.supplier_id);
+  document.getElementById('confirm-info').innerHTML =
+    `<strong>${o.item_name}</strong> | ${o.qty}${t('boxes')} | ${sup?sup.code:''} | ${t('col_delivery')}: ${o.delivery||'—'}`;
+  const facs = sup ? (sup.factories||[]) : [];
+  document.getElementById('co-fac').innerHTML = `<option value="">${t('sel_factory')}</option>` +
+    facs.map(f => `<option value="${f}">${f}</option>`).join('');
+  document.getElementById('co-start').value = new Date().toISOString().slice(0,10);
+  ['co-end','co-lot','co-note'].forEach(id => document.getElementById(id).value = '');
+  om('m-confirm'); applyT();
+}
+
+async function confirmOrder() {
+  const lot = document.getElementById('co-lot').value.trim();
+  const s   = document.getElementById('co-start').value;
+  const e   = document.getElementById('co-end').value;
+  if (!lot || !s || !e) { alert(t('err_confirm')); return; }
+  await api('PATCH', `/api/orders/${activeOrderId}/confirm`, {
+    factoryName: document.getElementById('co-fac').value,
+    lot, startPlan: s, endPlan: e,
+    note: document.getElementById('co-note').value,
+  });
+  cm('m-confirm'); showPage('orders');
+}
+
+async function openStart(orderId) {
+  activeOrderId = orderId;
+  const orders = await api('GET', '/api/orders');
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  document.getElementById('start-info').innerHTML = `<strong>${o.item_name}</strong> | ${o.qty}${t('boxes')}`;
+  document.getElementById('sp-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('sp-note').value = '';
+  om('m-start'); applyT();
+}
+
+async function startProd() {
+  await api('PATCH', `/api/orders/${activeOrderId}/start`, {
+    actualStart: document.getElementById('sp-date').value,
+  });
+  cm('m-start'); showPage('orders');
+}
+
+async function openComplete(orderId) {
+  activeOrderId = orderId;
+  const orders = await api('GET', '/api/orders');
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  document.getElementById('complete-info').innerHTML = `<strong>${o.item_name}</strong> | ${t('ordered')}: ${o.qty}${t('boxes')}`;
+  document.getElementById('cp-qty').value = o.qty;
+  document.getElementById('cp-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('cp-note').value = '';
+  om('m-complete'); applyT();
+}
+
+async function completeProd() {
+  const qty = parseInt(document.getElementById('cp-qty').value) || 0;
+  const date = document.getElementById('cp-date').value;
+  if (!qty || !date) { alert(t('err_complete')); return; }
+  await api('PATCH', `/api/orders/${activeOrderId}/complete`, { qty, completeDate: date });
+  cm('m-complete'); showPage('production');
+}
+
+// ── SUPPLIERS ─────────────────────────────────────
+document.getElementById('as-show').addEventListener('change', function() {
+  document.getElementById('as-fac-wrap').style.display = this.checked ? '' : 'none';
+});
+function addFac() {
+  const inp = document.getElementById('as-fac-in');
+  const n = inp.value.trim(); if (!n) return;
+  if (!newFacs.includes(n)) newFacs.push(n);
+  inp.value = '';
+  document.getElementById('as-fac-tags').innerHTML = newFacs.map(f =>
+    `<span class="factory-tag">🏭 ${f} <span style="cursor:pointer;margin-left:4px" onclick="rmFac('${f}')">✕</span></span>`).join('');
+}
+function rmFac(n) { newFacs = newFacs.filter(f=>f!==n); addFac(); }
+
+async function saveSupplier() {
+  const code = document.getElementById('as-code').value.trim();
+  const name = document.getElementById('as-name').value.trim();
+  const pw   = document.getElementById('as-pw').value;
+  if (!code || !name || !pw) { alert(t('err_supplier')); return; }
+  const show = document.getElementById('as-show').checked;
+  await api('POST', '/api/suppliers', { code, name, password: pw, showFactory: show, factories: show ? [...newFacs] : [] });
+  newFacs = [];
+  ['as-code','as-name','as-pw'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('as-fac-tags').innerHTML='';
+  cm('m-add-sup');
+  showPage('suppliers');
+}
+
+async function deleteSup(id, code) {
+  if (!confirm(`${code} 삭제?`)) return;
+  await api('DELETE', `/api/suppliers/${id}`);
+  showPage('suppliers');
+}
+
+// ── ITEMS ─────────────────────────────────────────
+async function prepAddItem() {
+  if (suppliers.length === 0) suppliers = await api('GET', '/api/suppliers');
+  document.getElementById('ai-trader').innerHTML = `<option value=""></option>` +
+    suppliers.map(s => `<option value="${s.id}">${s.code} – ${s.name}</option>`).join('');
+  document.getElementById('ai-fac-row').style.display = 'none';
+}
+function aiLoadFac() {
+  const tid = document.getElementById('ai-trader').value;
+  const sup = suppliers.find(s => s.id === tid);
+  const row = document.getElementById('ai-fac-row');
+  const sel = document.getElementById('ai-fac');
+  if (sup && sup.show_factory && (sup.factories||[]).length) {
+    row.style.display = '';
+    sel.innerHTML = `<option value=""></option>` + sup.factories.map(f=>`<option value="${f}">${f}</option>`).join('');
+  } else { row.style.display = 'none'; }
+}
+async function saveItem() {
+  const code = document.getElementById('ai-code').value.trim();
+  const name = document.getElementById('ai-name').value.trim();
+  if (!code || !name) { alert(t('err_item')); return; }
+  await api('POST', '/api/items', {
+    code, name,
+    size: document.getElementById('ai-size').value || '600*600',
+    supplierId: document.getElementById('ai-trader').value,
+    factoryName: document.getElementById('ai-fac').value,
+    minStock: parseInt(document.getElementById('ai-min').value) || 5,
+    price: parseFloat(document.getElementById('ai-price').value) || 0,
+  });
+  cm('m-add-item'); showPage('items');
+}
+async function deleteItem(id) {
+  if (!confirm('삭제?')) return;
+  await api('DELETE', `/api/items/${id}`);
+  showPage('items');
+}
+
+// ── MODAL helpers ─────────────────────────────────
+function om(id) { document.getElementById(id).classList.add('open'); }
+function cm(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+}));
+
+// ── INIT ──────────────────────────────────────────
+applyT();
+loadSuppliers();
+</script>
 </body>
 </html>
